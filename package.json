@@ -2,7 +2,7 @@
   "name": "create-github-app-token-aws",
   "private": true,
   "type": "module",
-  "version": "1.10.3",
+  "version": "1.0.0",
   "description": "GitHub Action for creating a GitHub App Installation Access Token using AWS KMS",
   "scripts": {
     "build": "esbuild main.js post.js --bundle --outdir=dist --out-extension:.js=.cjs --platform=node --target=node20.0.0 --packages=bundle",
