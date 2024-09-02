@@ -40,15 +40,8 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           kms-key-id: ${{ secrets.KMS_KEY_ID }}
-      - uses: octokit/request-action@v2.x
-        id: get-repository
-        env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-        with:
-          route: GET /installation/repositories
-      - run: echo '${{ steps.get-repository.outputs.data }}'
       # install release dependencies and release
       - run: npm install --no-save @semantic-release/git semantic-release-plugin-github-breaking-version-tag
       - run: npx semantic-release --debug
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
