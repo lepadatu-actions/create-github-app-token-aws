@@ -1,8 +1,17 @@
-# Create GitHub App Token
+# Create GitHub App Token using AWS KMS
 
 [![test](https://github.com/actions/create-github-app-token/actions/workflows/test.yml/badge.svg)](https://github.com/actions/create-github-app-token/actions/workflows/test.yml)
 
-GitHub Action for creating a GitHub App installation access token using AWS KMS in order to safely store the GitHub repositry private key.
+GitHub Action for generating a GitHub App installation access token using AWS KMS in order to safely store the GitHub App private key. This is a fork of vanilla [create-github-app-token](https://github.com/actions/create-github-app-token) action. Unlike the vanilla version, the GitHub App private key is not stored as a secret in GitHub but it is imported in AWS KMS instead as an asymmetric sign-verify customer-managed key. Once imported, it can no longer be retrieved from AWS KMS. However, AWS KMS is capable of signing messages using the key, such as the JWT token used to generate the GitHub App installation access token.
+
+In the vanilla action, the runner has direct access to sensitive information (i.e. the GitHub App private key). In case the runner gets compromised, a malicious actor could potentially get access to sensitive information and run arbitrary API calls, only limited by the GitHub App scope. 
+
+This action mitigates this risk by importing the sensitive information in a very secure location (AWS KMS) which does not allow the retrieval of the sensitive information.
+
+ >[!IMPORTANT] 
+ >Neither this action, nor AWS is responsible for securing access to your AWS account. See the [shared responsibility model](https://docs.aws.amazon.com/whitepapers/latest/aws-risk-and-compliance/shared-responsibility-model.html). It is highly advised to use temporary AWS credentials scoped to the least privilege when accessing AWS API in order to sign the JWT token.
+ >Using AWS KMS will generate extra costs in your AWS bill.
+
 
 ## Usage
 
@@ -10,8 +19,8 @@ In order to use this action, you need to:
 
 1. [Register new GitHub App](https://docs.github.com/apps/creating-github-apps/setting-up-a-github-app/creating-a-github-app)
 2. [Store the App's ID in your repository environment variable](https://docs.github.com/actions/learn-github-actions/variables#defining-configuration-variables-for-multiple-workflows) or [secret](https://docs.github.com/actions/security-guides/encrypted-secrets?tool=webui#creating-encrypted-secrets-for-a-repository) (example: `APP_ID`)
-3. [Import the App's private key in your AWS Account KMS service, under customer-managed keys of type assymetric, sign-verify](https://docs.aws.amazon.com/kms/latest/developerguide/importing-keys-create-cmk.html)
-4. [Store the above KMS Key ID as a repository secret](https://docs.github.com/actions/security-guides/encrypted-secrets?tool=webui#creating-encrypted-secrets-for-a-repository) (example `KMS_KEY_ID`). Once stored in AWS KMS, the GitHub private key can no longer be retieved from AWS. AWS API can only by asked to sign/verify using the respective key. This substantially improves the security posture, because the key is no longer accessible.
+3. [Import the App's private key in your AWS Account KMS service, under customer-managed keys of type asymmetric, sign-verify, RSA 2048](https://docs.aws.amazon.com/kms/latest/developerguide/importing-keys-create-cmk.html). Once imported in AWS KMS, the GitHub private key can no longer be retrieved from AWS. AWS API can only by asked to sign/verify using the respective key. This substantially improves the security posture, because the key is no longer accessible.
+4. [Store the above KMS Key ID as a repository secret](https://docs.github.com/actions/security-guides/encrypted-secrets?tool=webui#creating-encrypted-secrets-for-a-repository) (example `KMS_KEY_ID`)
 5. [Store the AWS role to be assumed by the action as a repository secret](https://docs.github.com/actions/security-guides/encrypted-secrets?tool=webui#creating-encrypted-secrets-for-a-repository) (example `ROLE_TO_ASSUME`)
 6. [Store the AWS session name as an environment_variable](https://docs.github.com/actions/learn-github-actions/variables#defining-configuration-variables-for-multiple-workflows) (example `ROLE_SESSION_NAME`)
 7. [Store the AWS region name as an environment_variable](https://docs.github.com/actions/learn-github-actions/variables#defining-configuration-variables-for-multiple-workflows) (example `AWS_REGION`)
@@ -373,7 +382,7 @@ GitHub App slug.
 
 The action creates an installation access token using [the `POST /app/installations/{installation_id}/access_tokens` endpoint](https://docs.github.com/rest/apps/apps?apiVersion=2022-11-28#create-an-installation-access-token-for-an-app). 
 
-The action uses the GitHub private key stored in AWS KMS so sign a JWT token and uses this token subsequently for autheticating each GitHub API call, including the one above. Once stored in AWS KMS, the GitHub private key can no longer be retieved from AWS. AWS API can only by asked to sign/verify using the respective key.  This substantially improves the security posture, because the action will no longer access the private key anymore, but ask AWS API to sign/verify instead. 
+The action uses the GitHub private key stored in AWS KMS so sign a JWT token and uses this token subsequently for authenticating each GitHub API call, including the one above. Once stored in AWS KMS, the GitHub private key can no longer be retrieved from AWS. AWS API can only by asked to sign/verify using the respective key.  This substantially improves the security posture, because the action will no longer access the private key anymore, but ask AWS API to sign/verify instead. 
 
 By default,
 

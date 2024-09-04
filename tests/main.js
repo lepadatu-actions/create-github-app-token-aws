@@ -3,8 +3,8 @@
 import { MockAgent, setGlobalDispatcher } from "undici";
 
 export const DEFAULT_ENV = {
-  GITHUB_REPOSITORY_OWNER: "lepadatu-org",
-  GITHUB_REPOSITORY: "lepadatu-org/create-github-app-token-aws",
+  GITHUB_REPOSITORY_OWNER: "lepadatu-actions",
+  GITHUB_REPOSITORY: "lepadatu-actions/create-github-app-token-aws",
   // inputs are set as environment variables with the prefix INPUT_
   // https://docs.github.com/actions/creating-actions/metadata-syntax-for-github-actions#example-specifying-inputs
   "INPUT_GITHUB-API-URL": "https://api.github.com",
