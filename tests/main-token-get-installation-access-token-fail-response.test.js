@@ -11,7 +11,7 @@ await test((mockPool) => {
         method: "POST",
         headers: {
           accept: "application/vnd.github.v3+json",
-          "user-agent": "lepadatu-lepadatu-actions/create-github-app-token-aws",
+          "user-agent": "actions/create-github-app-token-aws",
         //   Intentionally omitting the `authorization` header.
         },
       })
