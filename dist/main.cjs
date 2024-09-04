@@ -2238,6 +2238,7 @@ var require_decodeText = __commonJS({
             return decoders.utf8;
           case "latin1":
           case "ascii":
+          // TODO: Make these a separate, strict decoder?
           case "us-ascii":
           case "iso-8859-1":
           case "iso8859-1":
@@ -2937,6 +2938,7 @@ var require_basename = __commonJS({
       for (var i = path.length - 1; i >= 0; --i) {
         switch (path.charCodeAt(i)) {
           case 47:
+          // '/'
           case 92:
             path = path.slice(i + 1);
             return path === ".." || path === "." ? "" : path;
@@ -4171,7 +4173,21 @@ var require_util2 = __commonJS({
           return referrerOrigin;
         }
         case "strict-origin":
+        // eslint-disable-line
+        /**
+           * 1. If referrerURL is a potentially trustworthy URL and
+           * request’s current URL is not a potentially trustworthy URL,
+           * then return no referrer.
+           * 2. Return referrerOrigin
+          */
         case "no-referrer-when-downgrade":
+        // eslint-disable-line
+        /**
+         * 1. If referrerURL is a potentially trustworthy URL and
+         * request’s current URL is not a potentially trustworthy URL,
+         * then return no referrer.
+         * 2. Return referrerOrigin
+        */
         default:
           return isNonPotentiallyTrustWorthy ? "no-referrer" : referrerOrigin;
       }
@@ -44039,7 +44055,21 @@ var require_util10 = __commonJS({
           return referrerOrigin;
         }
         case "strict-origin":
+        // eslint-disable-line
+        /**
+           * 1. If referrerURL is a potentially trustworthy URL and
+           * request’s current URL is not a potentially trustworthy URL,
+           * then return no referrer.
+           * 2. Return referrerOrigin
+          */
         case "no-referrer-when-downgrade":
+        // eslint-disable-line
+        /**
+         * 1. If referrerURL is a potentially trustworthy URL and
+         * request’s current URL is not a potentially trustworthy URL,
+         * then return no referrer.
+         * 2. Return referrerOrigin
+        */
         default:
           return isNonPotentiallyTrustWorthy ? "no-referrer" : referrerOrigin;
       }
@@ -45146,6 +45176,18 @@ var require_body2 = __commonJS({
     var { serializeAMimeType } = require_data_url();
     var { multipartFormDataParser } = require_formdata_parser();
     var textEncoder = new TextEncoder();
+    function noop() {
+    }
+    var hasFinalizationRegistry = globalThis.FinalizationRegistry && process.version.indexOf("v18") !== 0;
+    var streamRegistry;
+    if (hasFinalizationRegistry) {
+      streamRegistry = new FinalizationRegistry((weakRef) => {
+        const stream = weakRef.deref();
+        if (stream && !stream.locked && !isDisturbed(stream) && !isErrored(stream)) {
+          stream.cancel("Response object has been garbage collected").catch(noop);
+        }
+      });
+    }
     function extractBody(object, keepalive = false) {
       let stream = null;
       if (object instanceof ReadableStream) {
@@ -45288,8 +45330,11 @@ Content-Type: ${value.type || "application/octet-stream"}\r
       }
       return extractBody(object, keepalive);
     }
-    function cloneBody(body) {
+    function cloneBody(instance, body) {
       const [out1, out2] = body.stream.tee();
+      if (hasFinalizationRegistry) {
+        streamRegistry.register(instance, new WeakRef(out1));
+      }
       body.stream = out1;
       return {
         stream: out2,
@@ -45368,7 +45413,7 @@ Content-Type: ${value.type || "application/octet-stream"}\r
     }
     async function consumeBody(object, convertBytesToJSValue, instance) {
       webidl.brandCheck(object, instance);
-      if (bodyUnusable(object[kState].body)) {
+      if (bodyUnusable(object)) {
         throw new TypeError("Body is unusable: Body has already been read");
       }
       throwIfAborted(object[kState]);
@@ -45388,7 +45433,8 @@ Content-Type: ${value.type || "application/octet-stream"}\r
       await fullyReadBody(object[kState].body, successSteps, errorSteps);
       return promise.promise;
     }
-    function bodyUnusable(body) {
+    function bodyUnusable(object) {
+      const body = object[kState].body;
       return body != null && (body.stream.locked || util.isDisturbed(body.stream));
     }
     function parseJSONFromBytes(bytes) {
@@ -45406,7 +45452,10 @@ Content-Type: ${value.type || "application/octet-stream"}\r
       extractBody,
       safelyExtractBody,
       cloneBody,
-      mixinBody
+      mixinBody,
+      streamRegistry,
+      hasFinalizationRegistry,
+      bodyUnusable
     };
   }
 });
@@ -47960,8 +48009,13 @@ var require_balanced_pool2 = __commonJS({
     var kMaxWeightPerServer = Symbol("kMaxWeightPerServer");
     var kErrorPenalty = Symbol("kErrorPenalty");
     function getGreatestCommonDivisor(a, b) {
-      if (b === 0) return a;
-      return getGreatestCommonDivisor(b, a % b);
+      if (a === 0) return b;
+      while (b !== 0) {
+        const t = b;
+        b = a % b;
+        a = t;
+      }
+      return a;
     }
     function defaultFactory(origin, opts) {
       return new Pool(origin, opts);
@@ -48015,7 +48069,11 @@ var require_balanced_pool2 = __commonJS({
         return this;
       }
       _updateBalancedPoolStats() {
-        this[kGreatestCommonDivisor] = this[kClients].map((p) => p[kWeight]).reduce(getGreatestCommonDivisor, 0);
+        let result = 0;
+        for (let i = 0; i < this[kClients].length; i++) {
+          result = getGreatestCommonDivisor(this[kClients][i][kWeight], result);
+        }
+        this[kGreatestCommonDivisor] = result;
       }
       removeUpstream(upstream) {
         const upstreamOrigin = parseOrigin(upstream).origin;
@@ -51425,19 +51483,7 @@ var require_response2 = __commonJS({
     var { kConstruct } = require_symbols6();
     var assert = require("node:assert");
     var { types } = require("node:util");
-    var { isDisturbed, isErrored } = require("node:stream");
     var textEncoder = new TextEncoder("utf-8");
-    var hasFinalizationRegistry = globalThis.FinalizationRegistry && process.version.indexOf("v18") !== 0;
-    var registry;
-    if (hasFinalizationRegistry) {
-      registry = new FinalizationRegistry((stream) => {
-        if (!stream.locked && !isDisturbed(stream) && !isErrored(stream)) {
-          stream.cancel("Response object has been garbage collected").catch(noop);
-        }
-      });
-    }
-    function noop() {
-    }
     var Response = class _Response {
       // Creates network error Response.
       static error() {
@@ -51549,7 +51595,7 @@ var require_response2 = __commonJS({
       // Returns a clone of response.
       clone() {
         webidl.brandCheck(this, _Response);
-        if (this.bodyUsed || this.body?.locked) {
+        if (bodyUnusable(this)) {
           throw webidl.errors.exception({
             header: "Response.clone",
             message: "Body has already been consumed."
@@ -51608,7 +51654,7 @@ var require_response2 = __commonJS({
       }
       const newResponse = makeResponse({ ...response, body: null });
       if (response.body != null) {
-        newResponse.body = cloneBody(response.body);
+        newResponse.body = cloneBody(newResponse, response.body);
       }
       return newResponse;
     }
@@ -51733,7 +51779,7 @@ var require_response2 = __commonJS({
       setHeadersList(response[kHeaders], innerResponse.headersList);
       setHeadersGuard(response[kHeaders], guard);
       if (hasFinalizationRegistry && innerResponse.body?.stream) {
-        registry.register(response, innerResponse.body.stream);
+        streamRegistry.register(response, new WeakRef(innerResponse.body.stream));
       }
       return response;
     }
@@ -52169,7 +52215,7 @@ var require_request4 = __commonJS({
         }
         let finalBody = inputOrInitBody;
         if (initBody == null && inputBody != null) {
-          if (util.isDisturbed(inputBody.stream) || inputBody.stream.locked) {
+          if (bodyUnusable(input)) {
             throw new TypeError(
               "Cannot construct a Request with a Request object that has already been used."
             );
@@ -52304,7 +52350,7 @@ var require_request4 = __commonJS({
       // Returns a clone of request.
       clone() {
         webidl.brandCheck(this, _Request);
-        if (this.bodyUsed || this.body?.locked) {
+        if (bodyUnusable(this)) {
           throw new TypeError("unusable");
         }
         const clonedRequest = cloneRequest(this[kState]);
@@ -52397,7 +52443,7 @@ var require_request4 = __commonJS({
     function cloneRequest(request2) {
       const newRequest = makeRequest({ ...request2, body: null });
       if (request2.body != null) {
-        newRequest.body = cloneBody(request2.body);
+        newRequest.body = cloneBody(newRequest, request2.body);
       }
       return newRequest;
     }
@@ -58478,14 +58524,16 @@ var RequestError = class extends Error {
 
 // node_modules/@octokit/request/dist-bundle/index.js
 var VERSION2 = "0.0.0-development";
+var defaults_default = {
+  headers: {
+    "user-agent": `octokit-request.js/${VERSION2} ${getUserAgent()}`
+  }
+};
 function isPlainObject2(value) {
-  if (typeof value !== "object" || value === null)
-    return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]")
-    return false;
+  if (typeof value !== "object" || value === null) return false;
+  if (Object.prototype.toString.call(value) !== "[object Object]") return false;
   const proto = Object.getPrototypeOf(value);
-  if (proto === null)
-    return true;
+  if (proto === null) return true;
   const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
   return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
 }
@@ -58545,65 +58593,68 @@ function fetchWrapper(requestOptions) {
       if (status < 400) {
         return;
       }
-      throw new RequestError(response.statusText, status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: void 0
-        },
-        request: requestOptions
-      });
-    }
-    if (status === 304) {
-      throw new RequestError("Not modified", status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: await getResponseData(response)
-        },
-        request: requestOptions
-      });
-    }
-    if (status >= 400) {
-      const data = await getResponseData(response);
-      const error = new RequestError(toErrorMessage(data), status, {
-        response: {
-          url,
-          status,
-          headers,
-          data
-        },
-        request: requestOptions
-      });
-      throw error;
-    }
-    return parseSuccessResponseBody ? await getResponseData(response) : response.body;
-  }).then((data) => {
-    return {
-      status,
-      url,
-      headers,
-      data
-    };
-  }).catch((error) => {
-    if (error instanceof RequestError)
-      throw error;
-    else if (error.name === "AbortError")
-      throw error;
-    let message = error.message;
-    if (error.name === "TypeError" && "cause" in error) {
-      if (error.cause instanceof Error) {
-        message = error.cause.message;
-      } else if (typeof error.cause === "string") {
-        message = error.cause;
+      message = error.message;
+      if (error.name === "TypeError" && "cause" in error) {
+        if (error.cause instanceof Error) {
+          message = error.cause.message;
+        } else if (typeof error.cause === "string") {
+          message = error.cause;
+        }
       }
     }
-    throw new RequestError(message, 500, {
+    const requestError = new RequestError(message, 500, {
       request: requestOptions
     });
-  });
+    requestError.cause = error;
+    throw requestError;
+  }
+  const status = fetchResponse.status;
+  const url = fetchResponse.url;
+  const responseHeaders = {};
+  for (const [key, value] of fetchResponse.headers) {
+    responseHeaders[key] = value;
+  }
+  const octokitResponse = {
+    url,
+    status,
+    headers: responseHeaders,
+    data: ""
+  };
+  if ("deprecation" in responseHeaders) {
+    const matches = responseHeaders.link && responseHeaders.link.match(/<([^>]+)>; rel="deprecation"/);
+    const deprecationLink = matches && matches.pop();
+    log.warn(
+      `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${responseHeaders.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
+    );
+  }
+  if (status === 204 || status === 205) {
+    return octokitResponse;
+  }
+  if (requestOptions.method === "HEAD") {
+    if (status < 400) {
+      return octokitResponse;
+    }
+    throw new RequestError(fetchResponse.statusText, status, {
+      response: octokitResponse,
+      request: requestOptions
+    });
+  }
+  if (status === 304) {
+    octokitResponse.data = await getResponseData(fetchResponse);
+    throw new RequestError("Not modified", status, {
+      response: octokitResponse,
+      request: requestOptions
+    });
+  }
+  if (status >= 400) {
+    octokitResponse.data = await getResponseData(fetchResponse);
+    throw new RequestError(toErrorMessage(octokitResponse.data), status, {
+      response: octokitResponse,
+      request: requestOptions
+    });
+  }
+  octokitResponse.data = parseSuccessResponseBody ? await getResponseData(fetchResponse) : fetchResponse.body;
+  return octokitResponse;
 }
 async function getResponseData(response) {
   const contentType = response.headers.get("content-type");
@@ -58613,22 +58664,18 @@ async function getResponseData(response) {
   if (!contentType || /^text\/|charset=utf-8$/.test(contentType)) {
     return response.text();
   }
-  return getBufferResponse(response);
+  return response.arrayBuffer();
 }
 function toErrorMessage(data) {
-  if (typeof data === "string")
+  if (typeof data === "string") {
     return data;
-  let suffix;
-  if ("documentation_url" in data) {
-    suffix = ` - ${data.documentation_url}`;
-  } else {
-    suffix = "";
+  }
+  if (data instanceof ArrayBuffer) {
+    return "Unknown error";
   }
   if ("message" in data) {
-    if (Array.isArray(data.errors)) {
-      return `${data.message}: ${data.errors.map(JSON.stringify).join(", ")}${suffix}`;
-    }
-    return `${data.message}${suffix}`;
+    const suffix = "documentation_url" in data ? ` - ${data.documentation_url}` : "";
+    return Array.isArray(data.errors) ? `${data.message}: ${data.errors.map((v) => JSON.stringify(v)).join(", ")}${suffix}` : `${data.message}${suffix}`;
   }
   return `Unknown error: ${JSON.stringify(data)}`;
 }
@@ -58655,11 +58702,7 @@ function withDefaults2(oldEndpoint, newDefaults) {
     defaults: withDefaults2.bind(null, endpoint2)
   });
 }
-var request = withDefaults2(endpoint, {
-  headers: {
-    "user-agent": `octokit-request.js/${VERSION2} ${getUserAgent()}`
-  }
-});
+var request = withDefaults2(endpoint, defaults_default);
 
 // lib/request.js
 var import_undici = __toESM(require_undici2(), 1);
