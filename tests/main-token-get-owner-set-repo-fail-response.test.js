@@ -2,7 +2,7 @@ import { test } from "./main.js";
 
 // Verify `main` retry when  the GitHub API returns a 500 error.
 await test((mockPool) => {
-  process.env.INPUT_OWNER = "actions";
+  process.env.INPUT_OWNER= "lepadatu-actions";
   process.env.INPUT_REPOSITORIES = "failed-repo";
   const owner = process.env.INPUT_OWNER;
   const repo = process.env.INPUT_REPOSITORIES;
@@ -15,7 +15,7 @@ await test((mockPool) => {
       method: "GET",
       headers: {
         accept: "application/vnd.github.v3+json",
-        "user-agent": "actions/create-github-app-token",
+        "user-agent": "lepadatu-actions/create-github-app-token",
         // Intentionally omitting the `authorization` header, since JWT creation is not idempotent.
       },
     })
@@ -27,7 +27,7 @@ await test((mockPool) => {
       method: "GET",
       headers: {
         accept: "application/vnd.github.v3+json",
-        "user-agent": "actions/create-github-app-token",
+        "user-agent": "lepadatu-actions/create-github-app-token",
         // Intentionally omitting the `authorization` header, since JWT creation is not idempotent.
       },
     })

@@ -33,7 +33,7 @@ inputs:
     required: false
     deprecationMessage: "'skip_token_revoke' is deprecated and will be removed in a future version. Use 'skip-token-revoke' instead."
   # Make GitHub API configurable to support non-GitHub Cloud use cases
-  # see https://github.com/actions/create-github-app-token/issues/77
+  # see https://github.com/lepadatu-actions/create-github-app-token/issues/77
   github-api-url:
     description: The URL of the GitHub REST API.
     default: ${{ github.api_url }}

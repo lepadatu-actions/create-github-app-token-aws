@@ -1,8 +1,8 @@
 # Create GitHub App Token using AWS KMS
 
-[![test](https://github.com/actions/create-github-app-token/actions/workflows/test.yml/badge.svg)](https://github.com/actions/create-github-app-token/actions/workflows/test.yml)
+[![test](https://github.com/lepadatu-actions/create-github-app-token/actions/workflows/test.yml/badge.svg)](https://github.com/lepadatu-actions/create-github-app-token/actions/workflows/test.yml)
 
-GitHub Action for generating a GitHub App installation access token using AWS KMS in order to safely store the GitHub App private key. This is a fork of vanilla [create-github-app-token](https://github.com/actions/create-github-app-token) action. Unlike the vanilla version, the GitHub App private key is not stored as a secret in GitHub but it is imported in AWS KMS instead as an asymmetric sign-verify customer-managed key. Once imported, it can no longer be retrieved from AWS KMS. However, AWS KMS is capable of signing messages using the key, such as the JWT token used to generate the GitHub App installation access token.
+GitHub Action for generating a GitHub App installation access token using AWS KMS in order to safely store the GitHub App private key. This is a fork of vanilla [create-github-app-token](https://github.com/lepadatu-actions/create-github-app-token) action. Unlike the vanilla version, the GitHub App private key is not stored as a secret in GitHub but it is imported in AWS KMS instead as an asymmetric sign-verify customer-managed key. Once imported, it can no longer be retrieved from AWS KMS. However, AWS KMS is capable of signing messages using the key, such as the JWT token used to generate the GitHub App installation access token.
 
 In the vanilla action, the runner has direct access to sensitive information (i.e. the GitHub App private key). In case the runner gets compromised, a malicious actor could potentially get access to sensitive information and run arbitrary API calls, only limited by the GitHub App scope. 
 
@@ -30,7 +30,7 @@ In order to use this action, you need to:
 7. [Store the AWS region name as an environment_variable](https://docs.github.com/actions/learn-github-actions/variables#defining-configuration-variables-for-multiple-workflows) (example `AWS_REGION`)
 
 > [!IMPORTANT]  
-> An installation access token expires after 1 hour. Please [see this comment](https://github.com/actions/create-github-app-token/issues/121#issuecomment-2043214796) for alternative approaches if you have long-running processes.
+> An installation access token expires after 1 hour. Please [see this comment](https://github.com/lepadatu-actions/create-github-app-token/issues/121#issuecomment-2043214796) for alternative approaches if you have long-running processes.
 
 ### Create a token for the current repository
 
@@ -51,7 +51,7 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
           role-session-name: ${{ vars.ROLE_SESSION_NAME }}
-      - uses: actions/create-github-app-token@v1
+      - uses: lepadatu-actions/create-github-app-token@v1
         id: app-token
         with:
           app-id: ${{ vars.APP_ID }}
@@ -76,7 +76,7 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
           role-session-name: ${{ vars.ROLE_SESSION_NAME }}
-      - uses: actions/create-github-app-token@v1
+      - uses: lepadatu-actions/create-github-app-token@v1
         id: app-token
         with:
           # required
@@ -108,7 +108,7 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
           role-session-name: ${{ vars.ROLE_SESSION_NAME }}
-      - uses: actions/create-github-app-token@v1
+      - uses: lepadatu-actions/create-github-app-token@v1
         id: app-token
         with:
           # required
@@ -139,7 +139,7 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
           role-session-name: ${{ vars.ROLE_SESSION_NAME }}
-      - uses: actions/create-github-app-token@v1
+      - uses: lepadatu-actions/create-github-app-token@v1
         id: app-token
         with:
           # required
@@ -182,7 +182,7 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
           role-session-name: ${{ vars.ROLE_SESSION_NAME }}
-      - uses: actions/create-github-app-token@v1
+      - uses: lepadatu-actions/create-github-app-token@v1
         id: app-token
         with:
           app-id: ${{ vars.APP_ID }}
@@ -210,7 +210,7 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
           role-session-name: ${{ vars.ROLE_SESSION_NAME }}
-      - uses: actions/create-github-app-token@v1
+      - uses: lepadatu-actions/create-github-app-token@v1
         id: app-token
         with:
           app-id: ${{ vars.APP_ID }}
@@ -239,7 +239,7 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
           role-session-name: ${{ vars.ROLE_SESSION_NAME }}
-      - uses: actions/create-github-app-token@v1
+      - uses: lepadatu-actions/create-github-app-token@v1
         id: app-token
         with:
           app-id: ${{ vars.APP_ID }}
@@ -286,7 +286,7 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
           role-session-name: ${{ vars.ROLE_SESSION_NAME }}
-      - uses: actions/create-github-app-token@v1
+      - uses: lepadatu-actions/create-github-app-token@v1
         id: app-token
         with:
           app-id: ${{ vars.APP_ID }}
@@ -322,7 +322,7 @@ jobs:
           role-session-name: ${{ vars.ROLE_SESSION_NAME }}
     - name: Create GitHub App token
       id: create_token
-      uses: actions/create-github-app-token@v1
+      uses: lepadatu-actions/create-github-app-token@v1
       with:
         app-id: ${{ vars.GHES_APP_ID }}
         kms-key-id: ${{ secrets.KMS_KEY_ID }}

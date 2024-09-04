@@ -1,4 +1,4 @@
-process.env.GITHUB_REPOSITORY = "actions/create-github-app-token";
+process.env.GITHUB_REPOSITORY = "lepadatu-actions/create-github-app-token";
 delete process.env.GITHUB_REPOSITORY_OWNER;
 
 // Verify `main` exits with an error when `GITHUB_REPOSITORY_OWNER` is missing.

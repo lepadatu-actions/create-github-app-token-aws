@@ -58723,7 +58723,7 @@ var proxyFetch = (url, options) => {
 };
 var request_default = request.defaults({
   headers: {
-    "user-agent": "actions/create-github-app-token"
+    "user-agent": "lepadatu-actions/create-github-app-token"
   },
   baseUrl,
   /* c8 ignore next */

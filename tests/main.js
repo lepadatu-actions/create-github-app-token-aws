@@ -4,7 +4,7 @@ import { MockAgent, setGlobalDispatcher } from "undici";
 
 export const DEFAULT_ENV = {
   GITHUB_REPOSITORY_OWNER: "lepadatu-actions",
-  GITHUB_REPOSITORY: "lepadatu-actions/create-github-app-token-aws",
+  GITHUB_REPOSITORY: "lepadatu-lepadatu-actions/create-github-app-token-aws",
   // inputs are set as environment variables with the prefix INPUT_
   // https://docs.github.com/actions/creating-actions/metadata-syntax-for-github-actions#example-specifying-inputs
   "INPUT_GITHUB-API-URL": "https://api.github.com",
@@ -42,7 +42,7 @@ export async function test(cb = (_mockPool) => {}, env = DEFAULT_ENV) {
       method: "GET",
       headers: {
         accept: "application/vnd.github.v3+json",
-        "user-agent": "actions/create-github-app-token",
+        "user-agent": "lepadatu-actions/create-github-app-token",
         // Intentionally omitting the `authorization` header, since JWT creation is not idempotent.
       },
     })
@@ -62,7 +62,7 @@ export async function test(cb = (_mockPool) => {}, env = DEFAULT_ENV) {
       method: "POST",
       headers: {
         accept: "application/vnd.github.v3+json",
-        "user-agent": "actions/create-github-app-token",
+        "user-agent": "lepadatu-actions/create-github-app-token",
         // Note: Intentionally omitting the `authorization` header, since JWT creation is not idempotent.
       },
     })

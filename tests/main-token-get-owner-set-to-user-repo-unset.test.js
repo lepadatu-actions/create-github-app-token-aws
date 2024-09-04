@@ -14,7 +14,7 @@ await test((mockPool) => {
       method: "GET",
       headers: {
         accept: "application/vnd.github.v3+json",
-        "user-agent": "actions/create-github-app-token",
+        "user-agent": "lepadatu-actions/create-github-app-token",
         // Intentionally omitting the `authorization` header, since JWT creation is not idempotent.
       },
     })
@@ -25,7 +25,7 @@ await test((mockPool) => {
       method: "GET",
       headers: {
         accept: "application/vnd.github.v3+json",
-        "user-agent": "actions/create-github-app-token",
+        "user-agent": "lepadatu-actions/create-github-app-token",
         // Intentionally omitting the `authorization` header, since JWT creation is not idempotent.
       },
     })
