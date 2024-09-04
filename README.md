@@ -8,8 +8,12 @@ In the vanilla action, the runner has direct access to sensitive information (i.
 
 This action mitigates this risk by importing the sensitive information in a very secure location (AWS KMS) which does not allow the retrieval of the sensitive information.
 
- >[!IMPORTANT] 
- >Neither this action, nor AWS is responsible for securing access to your AWS account. See the [shared responsibility model](https://docs.aws.amazon.com/whitepapers/latest/aws-risk-and-compliance/shared-responsibility-model.html). It is highly advised to use temporary AWS credentials scoped to the least privilege when accessing AWS API in order to sign the JWT token.
+ >[!IMPORTANT]
+ >
+ >Neither this action, nor AWS is responsible for securing access to your AWS account. See the [shared responsibility model](https://docs.aws.amazon.com/whitepapers/latest/aws-risk-and-compliance/shared-responsibility-model.html). 
+ >
+ >It is highly advised to use temporary AWS credentials scoped to the least privilege when accessing AWS API in order to sign the JWT token.
+ >
  >Using AWS KMS will generate extra costs in your AWS bill.
 
 
